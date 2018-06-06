@@ -1,2 +1,5 @@
 # TagMeGallery
-Custom Android 6.0+ gallery, that allows to create custom tags for your photos and search by these tags
+Custom Android 6.0+ gallery, that allows to create custom tags for your photos and search by these tags.<br />
+Созданная галерея должна позволять пользователю назначать теги для своих фотографий, а также искать и группировать фотографии по тегам.<br />
+Каждая фотография может содержать до 16 равноценных тегов.<br />
+Теги на фотографиях удобнее чем сортировка по папкам т.к. позволяет одному файлу отвечать сразу нескольким тегам
