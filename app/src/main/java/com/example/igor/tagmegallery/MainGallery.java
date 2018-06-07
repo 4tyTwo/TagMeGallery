@@ -77,14 +77,19 @@ public class MainGallery extends AppCompatActivity {
         requestForSpecificPermission();
       }
     }
-    cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
-    cursor.moveToFirst();
-    column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-    column_index_folder_name = cursor
+    try {
+      cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
+      cursor.moveToFirst();
+      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+      column_index_folder_name = cursor
               .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
-    while (cursor.moveToNext()) {
-      absolutePathOfImage = cursor.getString(column_index_data);
-      listOfAllImages.add(absolutePathOfImage);
+      while (cursor.moveToNext()) {
+        absolutePathOfImage = cursor.getString(column_index_data);
+        listOfAllImages.add(absolutePathOfImage);
+      }
+    }
+    catch (NullPointerException e){
+      //pass
     }
     return listOfAllImages;
   }
