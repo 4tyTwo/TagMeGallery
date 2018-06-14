@@ -1,28 +1,37 @@
 package com.example.igor.tagmegallery;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.drawable.Drawable;
+import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
+import java.util.Currency;
 
 public class ImageAdapter extends BaseAdapter {
   private Context mContext;
-  ArrayList<String> allFilesPath;
+  public Cursor mCursor;
+  ArrayList<String> allThumbsPath;
+  ArrayList<String> allImagesPath;
 
   public ImageAdapter(Context c) {
     mContext = c;
+
   }
 
   public int getCount() {
-    return allFilesPath.size();
+    return allThumbsPath.size();
   }
 
   public Object getItem(int position) {
-    return null;
+    return allImagesPath.get(position);
   }
 
   public long getItemId(int position) {
@@ -41,7 +50,19 @@ public class ImageAdapter extends BaseAdapter {
     } else {
       imageView = (ImageView) convertView;
     }
-    imageView.setImageDrawable(Drawable.createFromPath(allFilesPath.get(position)));
+    imageView.setImageDrawable(Drawable.createFromPath(allThumbsPath.get(position)));
     return imageView;
   }
-}
+  AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+      Drawable img = parent.getResources().getDrawable((int) id, null);
+      img.setBounds(0, 0, 60, 60);
+      AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
+      LayoutInflater factory = LayoutInflater.from(parent.getContext());
+      final View view2 = factory.inflate(R.layout.image_dialog_layout, null);
+      alertadd.setView(view2);
+      alertadd.show();
+    }
+  };
+};

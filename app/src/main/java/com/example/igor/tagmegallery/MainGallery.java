@@ -6,11 +6,14 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,20 +24,30 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+
 import com.example.igor.tagmegallery.ImageAdapter;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class MainGallery extends AppCompatActivity {
 
   //Fields
   public static ArrayList<String> allImagePath = new ArrayList<>();
+  public static ArrayList<String> allThumbsPath = new ArrayList<>();
   GridView GalleryGrid;
-  ImageAdapter adapter;
+  static ImageAdapter adapter;
+  public static ArrayList<MediaStore.Images.Thumbnails> allThumbs = new ArrayList<>();
   ArrayAdapter<ImageView>  arrayAdapter;
   private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
           = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -45,20 +58,81 @@ public class MainGallery extends AppCompatActivity {
     }
   };
 
+
+  class CustomListener implements AdapterView.OnItemClickListener{
+    @Override
+    public void onItemClick(final AdapterView<?> parent, View view, int position, long id){
+      final String path = (String) parent.getItemAtPosition(position);
+      Drawable img = Drawable.createFromPath(path);
+      img.setBounds(0, 0, 60, 60);
+      AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
+      LayoutInflater factory = LayoutInflater.from(parent.getContext());
+      View view2 = factory.inflate(R.layout.image_dialog_layout, null);
+      alertadd.setView(view2);
+      alertadd.show();
+      final AlertDialog dialog = alertadd.create();
+      dialog.setOnShowListener(new DialogInterface.OnShowListener(){
+        @Override
+        public void onShow(DialogInterface d) {
+          ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
+          Drawable drawable = Drawable.createFromPath(path);
+          image.setImageDrawable(Drawable.createFromPath(path));
+          Bitmap bmp = ((BitmapDrawable)image.getBackground()).getBitmap();
+          float imageWidthInPX = (float)bmp.getWidth();
+          LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
+                  Math.round(imageWidthInPX * (float)bmp.getHeight() / (float)bmp.getWidth()));
+          image.setLayoutParams(layoutParams);
+        }
+      });
+
+    }
+  }
+
+  private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
+    @Override
+    public void onItemClick(final AdapterView<?> parent, View view, int position, long id) {
+      final String path = (String) parent.getItemAtPosition(position);
+      Drawable img = Drawable.createFromPath(path);
+      img.setBounds(0, 0, 60, 60);
+      AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
+      LayoutInflater factory = LayoutInflater.from(parent.getContext());
+      View view2 = factory.inflate(R.layout.image_dialog_layout, null);
+      alertadd.setView(view2);
+      final AlertDialog dialog = alertadd.create();
+      dialog.setOnShowListener(new DialogInterface.OnShowListener(){
+        @Override
+        public void onShow(DialogInterface d) {
+          ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
+          Drawable drawable = Drawable.createFromPath(path);
+          image.setImageDrawable(Drawable.createFromPath(path));
+          Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
+          float imageWidthInPX = (float)bmp.getWidth();
+          LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
+                  Math.round(imageWidthInPX * (float)bmp.getHeight() / (float)bmp.getWidth()));
+          image.setLayoutParams(layoutParams);
+        }
+    });
+      dialog.show();
+  }
+  };
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main_gallery);
     final Activity act = this;
-    allImagePath = getImagesPath(act);
+    //allThumbsPath = getThumbsPath(act);
+   // allImagePath = getImagesPath(act);
+    initializePath(this,allThumbsPath,allImagePath);
     GalleryGrid = findViewById(R.id.GalleryGrid);
     //GalleryGrid.setNumColumns(3);
-    ArrayList<ImageView> imageList = new ArrayList<>(allImagePath.size());
     //initializeImageList(imageList);
    // arrayAdapter = new ArrayAdapter(this, R.layout.activity_main_gallery,R.id.GalleryGrid,imageList);
     adapter = new ImageAdapter(this);
-    adapter.allFilesPath = allImagePath;
+    adapter.allThumbsPath = allThumbsPath;
+    adapter.allImagesPath = allImagePath;
     GalleryGrid.setAdapter(adapter);
+    GalleryGrid.setOnItemClickListener(itemClickListener);
   }
 
   private boolean checkIfAlreadyhavePermission() {
@@ -72,6 +146,89 @@ public class MainGallery extends AppCompatActivity {
 
   private void requestForSpecificPermission() {
     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 101);
+  }
+
+  private ArrayList<String> getThumbsPath(final Activity activity){
+    Uri uri;
+    Cursor cursor;
+    int column_index_data, column_index_folder_name;
+    ArrayList<String> listOfAllThumbs = new ArrayList<String>();
+    String absolutePathOfThumb = null;
+    uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
+    String[] projection = {MediaStore.Images.Thumbnails.DATA};
+    final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+
+    int MyVersion = Build.VERSION.SDK_INT;
+    if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+      if (!checkIfAlreadyhavePermission()) {
+        requestForSpecificPermission();
+      }
+    }
+    try {
+      cursor = MediaStore.Images.Thumbnails.queryMiniThumbnails(getContentResolver(),uri,MediaStore.Images.Thumbnails.MINI_KIND,null);
+      cursor.moveToFirst();
+      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+      //column_index_folder_name = cursor
+             // .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+      while (cursor.moveToNext()) {
+        absolutePathOfThumb = cursor.getString(column_index_data);
+        listOfAllThumbs.add(absolutePathOfThumb);
+      }
+    }
+    catch (NullPointerException e){
+      //pass
+    }
+    Collections.reverse(listOfAllThumbs);
+    return  listOfAllThumbs;
+  }
+
+  private void initializePath(final Activity activity,ArrayList<String> thumbs, ArrayList<String> images){
+    Uri uri;
+    Cursor cursor;
+    int column_index_data, column_index_folder_name;
+    String absolutePathOfImage = null;
+    String absolutePathOfThumb = null;
+    uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+    String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+    final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+
+    int MyVersion = Build.VERSION.SDK_INT;
+    if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+      if (!checkIfAlreadyhavePermission()) {
+        requestForSpecificPermission();
+      }
+    }
+    try {
+      cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
+      cursor.moveToFirst();
+      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+      column_index_folder_name = cursor
+              .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+      while (cursor.moveToNext()) {
+        absolutePathOfImage = cursor.getString(column_index_data);
+        images.add(absolutePathOfImage);
+      }
+      cursor.close();
+    }
+    catch (NullPointerException e){
+      //pass
+    }
+    try {
+      uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
+      cursor = MediaStore.Images.Thumbnails.queryMiniThumbnails(getContentResolver(),uri,MediaStore.Images.Thumbnails.MINI_KIND,null);
+      cursor.moveToFirst();
+      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+      //column_index_folder_name = cursor
+       //.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+      while (cursor.moveToNext()) {
+        absolutePathOfThumb = cursor.getString(column_index_data);
+        thumbs.add(absolutePathOfThumb);
+      }
+    }
+    catch (NullPointerException e){
+      //pass
+    }
+    Collections.reverse(thumbs);
   }
 
   private ArrayList<String> getImagesPath(final Activity activity){
