@@ -122,8 +122,8 @@ public class MainGallery extends AppCompatActivity {
     setContentView(R.layout.activity_main_gallery);
     final Activity act = this;
     //allThumbsPath = getThumbsPath(act);
-   // allImagePath = getImagesPath(act);
-    initializePath(this,allThumbsPath,allImagePath);
+    allImagePath = getImagesPath(act);
+    //initializePath(this,allThumbsPath,allImagePath);
     GalleryGrid = findViewById(R.id.GalleryGrid);
     //GalleryGrid.setNumColumns(3);
     //initializeImageList(imageList);
