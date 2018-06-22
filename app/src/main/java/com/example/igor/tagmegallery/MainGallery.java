@@ -1,12 +1,9 @@
 package com.example.igor.tagmegallery;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -32,9 +29,6 @@ import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
-
-import com.example.igor.tagmegallery.ImageAdapter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +39,8 @@ public class MainGallery extends AppCompatActivity {
   //Fields
   public static ArrayList<String> allImagePath = new ArrayList<>();
   public static ArrayList<String> allThumbsPath = new ArrayList<>();
+  public static ArrayList<Integer> thumbsId = new ArrayList<>();
+  public static ArrayList<Integer> imagesId = new ArrayList<>();
   GridView GalleryGrid;
   static ImageAdapter adapter;
   public static ArrayList<MediaStore.Images.Thumbnails> allThumbs = new ArrayList<>();
@@ -91,7 +87,10 @@ public class MainGallery extends AppCompatActivity {
   private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
     @Override
     public void onItemClick(final AdapterView<?> parent, View view, int position, long id) {
-      final String path = (String) parent.getItemAtPosition(position);
+      int realId = thumbsId.get(position);
+      int pos = imagesId.indexOf(realId);
+      //Drawable img = parent.getResources().getDrawable(pos, null);
+      final String path = allImagePath.get(pos);
       Drawable img = Drawable.createFromPath(path);
       img.setBounds(0, 0, 60, 60);
       AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
@@ -121,7 +120,7 @@ public class MainGallery extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main_gallery);
     final Activity act = this;
-    //allThumbsPath = getThumbsPath(act);
+    allThumbsPath = getThumbsPath(act);
     allImagePath = getImagesPath(act);
     //initializePath(this,allThumbsPath,allImagePath);
     GalleryGrid = findViewById(R.id.GalleryGrid);
@@ -131,6 +130,8 @@ public class MainGallery extends AppCompatActivity {
     adapter = new ImageAdapter(this);
     adapter.allThumbsPath = allThumbsPath;
     adapter.allImagesPath = allImagePath;
+    adapter.thumbsId = thumbsId;
+    adapter.imagesId = imagesId;
     GalleryGrid.setAdapter(adapter);
     GalleryGrid.setOnItemClickListener(itemClickListener);
   }
@@ -155,7 +156,7 @@ public class MainGallery extends AppCompatActivity {
     ArrayList<String> listOfAllThumbs = new ArrayList<String>();
     String absolutePathOfThumb = null;
     uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
-    String[] projection = {MediaStore.Images.Thumbnails.DATA};
+    String[] projection = {MediaStore.Images.Thumbnails.DATA, MediaStore.Images.Thumbnails.IMAGE_ID};
     final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
 
     int MyVersion = Build.VERSION.SDK_INT;
@@ -168,17 +169,22 @@ public class MainGallery extends AppCompatActivity {
       cursor = MediaStore.Images.Thumbnails.queryMiniThumbnails(getContentResolver(),uri,MediaStore.Images.Thumbnails.MINI_KIND,null);
       cursor.moveToFirst();
       column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-      //column_index_folder_name = cursor
-             // .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+      int id = cursor.getColumnIndexOrThrow(MediaStore.Images.Thumbnails.IMAGE_ID);
+      thumbsId.add(Integer.parseInt(cursor.getString(id)));
+      absolutePathOfThumb = cursor.getString(column_index_data);
+      listOfAllThumbs.add(absolutePathOfThumb);
       while (cursor.moveToNext()) {
+        thumbsId.add(Integer.parseInt(cursor.getString(id)));
         absolutePathOfThumb = cursor.getString(column_index_data);
         listOfAllThumbs.add(absolutePathOfThumb);
       }
+      cursor.close();
     }
     catch (NullPointerException e){
       //pass
     }
     Collections.reverse(listOfAllThumbs);
+    Collections.reverse(thumbsId);
     return  listOfAllThumbs;
   }
 
@@ -228,6 +234,7 @@ public class MainGallery extends AppCompatActivity {
     catch (NullPointerException e){
       //pass
     }
+    Collections.reverse(thumbsId);
     Collections.reverse(thumbs);
   }
 
@@ -238,25 +245,22 @@ public class MainGallery extends AppCompatActivity {
     ArrayList<String> listOfAllImages = new ArrayList<String>();
     String absolutePathOfImage = null;
     uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-    String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+    String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.MediaColumns._ID};
     final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
-
-    int MyVersion = Build.VERSION.SDK_INT;
-    if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
-      if (!checkIfAlreadyhavePermission()) {
-        requestForSpecificPermission();
-      }
-    }
     try {
       cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
       cursor.moveToFirst();
       column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-      column_index_folder_name = cursor
-              .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
+      int id = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID);
+      imagesId.add(Integer.parseInt(cursor.getString(id)));
+      absolutePathOfImage = cursor.getString(column_index_data);
+      listOfAllImages.add(absolutePathOfImage);
       while (cursor.moveToNext()) {
+        imagesId.add(Integer.parseInt(cursor.getString(id)));
         absolutePathOfImage = cursor.getString(column_index_data);
         listOfAllImages.add(absolutePathOfImage);
       }
+      cursor.close();
     }
     catch (NullPointerException e){
       //pass
