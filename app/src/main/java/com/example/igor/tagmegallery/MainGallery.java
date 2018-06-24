@@ -55,7 +55,7 @@ public class MainGallery extends AppCompatActivity {
   };
 
 
-  class CustomListener implements AdapterView.OnItemClickListener{
+  /*class CustomListener implements AdapterView.OnItemClickListener{
     @Override
     public void onItemClick(final AdapterView<?> parent, View view, int position, long id){
       final String path = (String) parent.getItemAtPosition(position);
@@ -82,17 +82,16 @@ public class MainGallery extends AppCompatActivity {
       });
 
     }
-  }
+  }*/
 
   private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
     @Override
     public void onItemClick(final AdapterView<?> parent, View view, int position, long id) {
       int realId = thumbsId.get(position);
       int pos = imagesId.indexOf(realId);
-      //Drawable img = parent.getResources().getDrawable(pos, null);
       final String path = allImagePath.get(pos);
-      Drawable img = Drawable.createFromPath(path);
-      img.setBounds(0, 0, 60, 60);
+      //Drawable img = Drawable.createFromPath(path);
+      //img.setBounds(0, 0, 60, 60);
       AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
       LayoutInflater factory = LayoutInflater.from(parent.getContext());
       View view2 = factory.inflate(R.layout.image_dialog_layout, null);
@@ -105,6 +104,7 @@ public class MainGallery extends AppCompatActivity {
           Drawable drawable = Drawable.createFromPath(path);
           image.setImageDrawable(Drawable.createFromPath(path));
           Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
+          //Получаем размеры экрана в пикселях
           float imageWidthInPX = (float)bmp.getWidth();
           LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
                   Math.round(imageWidthInPX * (float)bmp.getHeight() / (float)bmp.getWidth()));
@@ -174,17 +174,17 @@ public class MainGallery extends AppCompatActivity {
       absolutePathOfThumb = cursor.getString(column_index_data);
       listOfAllThumbs.add(absolutePathOfThumb);
       while (cursor.moveToNext()) {
-        thumbsId.add(Integer.parseInt(cursor.getString(id)));
+        thumbsId.add(0,Integer.parseInt(cursor.getString(id)));
         absolutePathOfThumb = cursor.getString(column_index_data);
-        listOfAllThumbs.add(absolutePathOfThumb);
+        listOfAllThumbs.add(0,absolutePathOfThumb);
       }
       cursor.close();
     }
     catch (NullPointerException e){
       //pass
     }
-    Collections.reverse(listOfAllThumbs);
-    Collections.reverse(thumbsId);
+    //Collections.reverse(listOfAllThumbs);
+    //Collections.reverse(thumbsId);
     return  listOfAllThumbs;
   }
 
