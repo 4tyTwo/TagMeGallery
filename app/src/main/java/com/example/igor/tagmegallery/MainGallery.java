@@ -15,27 +15,17 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Layout;
 import android.view.Display;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 
 public class MainGallery extends AppCompatActivity {
 
@@ -46,46 +36,6 @@ public class MainGallery extends AppCompatActivity {
   public static ArrayList<Integer> imagesId = new ArrayList<>();
   GridView GalleryGrid;
   static ImageAdapter adapter;
-  public static ArrayList<MediaStore.Images.Thumbnails> allThumbs = new ArrayList<>();
-  ArrayAdapter<ImageView>  arrayAdapter;
-  private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-          = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-      return false;
-    }
-  };
-
-
-  /*class CustomListener implements AdapterView.OnItemClickListener{
-    @Override
-    public void onItemClick(final AdapterView<?> parent, View view, int position, long id){
-      final String path = (String) parent.getItemAtPosition(position);
-      Drawable img = Drawable.createFromPath(path);
-      img.setBounds(0, 0, 60, 60);
-      AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
-      LayoutInflater factory = LayoutInflater.from(parent.getContext());
-      View view2 = factory.inflate(R.layout.image_dialog_layout, null);
-      alertadd.setView(view2);
-      alertadd.show();
-      final AlertDialog dialog = alertadd.create();
-      dialog.setOnShowListener(new DialogInterface.OnShowListener(){
-        @Override
-        public void onShow(DialogInterface d) {
-          ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
-          Drawable drawable = Drawable.createFromPath(path);
-          image.setImageDrawable(Drawable.createFromPath(path));
-          Bitmap bmp = ((BitmapDrawable)image.getBackground()).getBitmap();
-          float imageWidthInPX = (float)bmp.getWidth();
-          LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
-                  Math.round(imageWidthInPX * (float)bmp.getHeight() / (float)bmp.getWidth()));
-          image.setLayoutParams(layoutParams);
-        }
-      });
-
-    }
-  }*/
 
   private AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
     @Override
@@ -93,8 +43,6 @@ public class MainGallery extends AppCompatActivity {
       int realId = thumbsId.get(position);
       int pos = imagesId.indexOf(realId);
       final String path = allImagePath.get(pos);
-      //Drawable img = Drawable.createFromPath(path);
-      //img.setBounds(0, 0, 60, 60);
       AlertDialog.Builder alertadd = new AlertDialog.Builder(parent.getContext());
       LayoutInflater factory = LayoutInflater.from(parent.getContext());
       View view2 = factory.inflate(R.layout.image_dialog_layout, null);
@@ -103,35 +51,34 @@ public class MainGallery extends AppCompatActivity {
       dialog.setOnShowListener(new DialogInterface.OnShowListener(){
         @Override
         public void onShow(DialogInterface d) {
+          Display display = getWindowManager().getDefaultDisplay();
+          Point size = new Point();
+          display.getSize(size);
+          float dialogHeight =  size.y * 0.9f;
+          float dialogWidth = size.x * 0.85f;
+          ImageView image = dialog.findViewById(R.id.imgOriginal);
+          Drawable drawable = Drawable.createFromPath(path);
+          Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
+          //Получаем размеры изображения в пикселях
+          float imageWidthInPX = (float)bmp.getWidth();
+          float imageHeightInPx = (float) bmp.getHeight();
+          //Отношение размера изображения к  диалоговому окну
+          float heightCoeff = imageHeightInPx/dialogHeight;
+          float widthCoeff = imageWidthInPX/dialogWidth;
+          //
+          float compressCoeff = 1.0f;
+          int finalHeight, finalWidth;
+          if (heightCoeff > 1.0f || widthCoeff > 1.0f ){
+            compressCoeff = heightCoeff > widthCoeff ? heightCoeff : widthCoeff;
+          }
+          finalWidth = Math.round(imageWidthInPX/compressCoeff);
+          finalHeight = Math.round(imageHeightInPx/compressCoeff);
+          Bitmap resized = Bitmap.createScaledBitmap(bmp,finalWidth, finalHeight, true);
+          image.setImageBitmap(resized);
 
         }
     });
       dialog.show();
-      Display display = getWindowManager().getDefaultDisplay();
-      Point size = new Point();
-      display.getSize(size);
-      float dialogHeight =  size.y * 0.9f;
-      float dialogWidth = size.x * 0.85f;
-      ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
-      Drawable drawable = Drawable.createFromPath(path);
-      //image.setImageDrawable(Drawable.createFromPath(path));
-      Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
-      //Получаем размеры изображения в пикселях
-      float imageWidthInPX = (float)bmp.getWidth();
-      float imageHeightInPx = (float) bmp.getHeight();
-      //Отношение размера изображения к  диалоговому окну
-      float heightCoeff = imageHeightInPx/dialogHeight;
-      float widthCoeff = imageWidthInPX/dialogWidth;
-      //
-      float compressCoeff = 1.0f;
-      int finalHeight, finalWidth;
-      if (heightCoeff > 1.0f || widthCoeff > 1.0f ){
-        compressCoeff = heightCoeff > widthCoeff ? heightCoeff : widthCoeff;
-      }
-      finalWidth = Math.round(imageWidthInPX/compressCoeff);
-      finalHeight = Math.round(imageHeightInPx/compressCoeff);
-      Bitmap resized = Bitmap.createScaledBitmap(bmp,(int)finalWidth, finalHeight, true);
-      image.setImageBitmap(resized);
   }
   };
 
@@ -139,14 +86,9 @@ public class MainGallery extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main_gallery);
-    final Activity act = this;
-    allThumbsPath = getThumbsPath(act);
-    allImagePath = getImagesPath(act);
-    //initializePath(this,allThumbsPath,allImagePath);
+    allThumbsPath = getThumbsPath();
+    allImagePath = getImagesPath();
     GalleryGrid = findViewById(R.id.GalleryGrid);
-    //GalleryGrid.setNumColumns(3);
-    //initializeImageList(imageList);
-   // arrayAdapter = new ArrayAdapter(this, R.layout.activity_main_gallery,R.id.GalleryGrid,imageList);
     adapter = new ImageAdapter(this);
     adapter.allThumbsPath = allThumbsPath;
     adapter.allImagesPath = allImagePath;
@@ -169,15 +111,13 @@ public class MainGallery extends AppCompatActivity {
     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 101);
   }
 
-  private ArrayList<String> getThumbsPath(final Activity activity){
+  private ArrayList<String> getThumbsPath(){
     Uri uri;
     Cursor cursor;
-    int column_index_data, column_index_folder_name;
-    ArrayList<String> listOfAllThumbs = new ArrayList<String>();
-    String absolutePathOfThumb = null;
+    int column_index_data;
+    ArrayList<String> listOfAllThumbs = new ArrayList<>();
+    String absolutePathOfThumb;
     uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
-    String[] projection = {MediaStore.Images.Thumbnails.DATA, MediaStore.Images.Thumbnails.IMAGE_ID};
-    final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
 
     int MyVersion = Build.VERSION.SDK_INT;
     if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -194,80 +134,29 @@ public class MainGallery extends AppCompatActivity {
       absolutePathOfThumb = cursor.getString(column_index_data);
       listOfAllThumbs.add(absolutePathOfThumb);
       while (cursor.moveToNext()) {
-        thumbsId.add(0,Integer.parseInt(cursor.getString(id)));
+        thumbsId.add(0,Integer.parseInt(cursor.getString(id))); //Добавляем на 0 позицию, т.к. тамбнейлы лежат в порядке, обратном изображениям
         absolutePathOfThumb = cursor.getString(column_index_data);
         listOfAllThumbs.add(0,absolutePathOfThumb);
       }
       cursor.close();
     }
     catch (NullPointerException e){
-      //pass
+      e.printStackTrace();
     }
-    //Collections.reverse(listOfAllThumbs);
-    //Collections.reverse(thumbsId);
     return  listOfAllThumbs;
   }
 
-  private void initializePath(final Activity activity,ArrayList<String> thumbs, ArrayList<String> images){
+  private ArrayList<String> getImagesPath(){
     Uri uri;
     Cursor cursor;
-    int column_index_data, column_index_folder_name;
-    String absolutePathOfImage = null;
-    String absolutePathOfThumb = null;
-    uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-    String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
-    final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
-
-    int MyVersion = Build.VERSION.SDK_INT;
-    if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
-      if (!checkIfAlreadyhavePermission()) {
-        requestForSpecificPermission();
-      }
-    }
-    try {
-      cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
-      cursor.moveToFirst();
-      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-      column_index_folder_name = cursor
-              .getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
-      while (cursor.moveToNext()) {
-        absolutePathOfImage = cursor.getString(column_index_data);
-        images.add(absolutePathOfImage);
-      }
-      cursor.close();
-    }
-    catch (NullPointerException e){
-      //pass
-    }
-    try {
-      uri = MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI;
-      cursor = MediaStore.Images.Thumbnails.queryMiniThumbnails(getContentResolver(),uri,MediaStore.Images.Thumbnails.MINI_KIND,null);
-      cursor.moveToFirst();
-      column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-      //column_index_folder_name = cursor
-       //.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
-      while (cursor.moveToNext()) {
-        absolutePathOfThumb = cursor.getString(column_index_data);
-        thumbs.add(absolutePathOfThumb);
-      }
-    }
-    catch (NullPointerException e){
-      //pass
-    }
-    Collections.reverse(thumbsId);
-    Collections.reverse(thumbs);
-  }
-
-  private ArrayList<String> getImagesPath(final Activity activity){
-    Uri uri;
-    Cursor cursor;
-    int column_index_data, column_index_folder_name;
-    ArrayList<String> listOfAllImages = new ArrayList<String>();
-    String absolutePathOfImage = null;
+    int column_index_data;
+    ArrayList<String> listOfAllImages = new ArrayList<>();
+    String absolutePathOfImage;
     uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
     String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.MediaColumns._ID};
     final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
     try {
+      //Обращаемся к ОС, чтобы получить пути к изображениям
       cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
       cursor.moveToFirst();
       column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
@@ -275,6 +164,7 @@ public class MainGallery extends AppCompatActivity {
       imagesId.add(Integer.parseInt(cursor.getString(id)));
       absolutePathOfImage = cursor.getString(column_index_data);
       listOfAllImages.add(absolutePathOfImage);
+      //Движимся, пока курсор курсор не дойдет до последней записи результата
       while (cursor.moveToNext()) {
         imagesId.add(Integer.parseInt(cursor.getString(id)));
         absolutePathOfImage = cursor.getString(column_index_data);
@@ -283,7 +173,7 @@ public class MainGallery extends AppCompatActivity {
       cursor.close();
     }
     catch (NullPointerException e){
-      //pass
+      e.printStackTrace();
     }
     return listOfAllImages;
   }
@@ -300,16 +190,6 @@ public class MainGallery extends AppCompatActivity {
         break;
       default:
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-  }
-
-  private void initializeImageList(ArrayList<ImageView> imageList){
-    for (int i = 0; i < allImagePath.size(); ++i){
-      try {
-        imageList.get(i).setImageBitmap(decodeSampledBitmap(allImagePath.get(i)));
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
     }
   }
 
@@ -335,31 +215,4 @@ public class MainGallery extends AppCompatActivity {
 
     return inSampleSize;
   }
-
-
-  private Bitmap decodeSampledBitmap(String pathName,
-                                     int reqWidth, int reqHeight) {
-
-    // First decode with inJustDecodeBounds=true to check dimensions
-    final BitmapFactory.Options options = new BitmapFactory.Options();
-    options.inJustDecodeBounds = true;
-    BitmapFactory.decodeFile(pathName, options);
-
-    // Calculate inSampleSize
-    options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-
-    // Decode bitmap with inSampleSize set
-    options.inJustDecodeBounds = false;
-    return BitmapFactory.decodeFile(pathName, options);
-  }
-
-  private Bitmap decodeSampledBitmap(String pathName) {
-    Display display = getWindowManager().getDefaultDisplay();
-    Point size = new Point();
-    display.getSize(size);
-    int width = size.x;
-    int height = size.y;
-    return decodeSampledBitmap(pathName, width, height);
-  }
-
 }
