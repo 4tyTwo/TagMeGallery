@@ -20,10 +20,12 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Layout;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
@@ -100,18 +102,43 @@ public class MainGallery extends AppCompatActivity {
       dialog.setOnShowListener(new DialogInterface.OnShowListener(){
         @Override
         public void onShow(DialogInterface d) {
-          ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
+          /*ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
           Drawable drawable = Drawable.createFromPath(path);
           image.setImageDrawable(Drawable.createFromPath(path));
           Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
-          //Получаем размеры экрана в пикселях
+          //Получаем размеры изображения в пикселях
           float imageWidthInPX = (float)bmp.getWidth();
+          float imageHeightInPx = (float) bmp.getHeight();
           LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
-                  Math.round(imageWidthInPX * (float)bmp.getHeight() / (float)bmp.getWidth()));
-          image.setLayoutParams(layoutParams);
+                  Math.round(imageHeightInPx));
+          image.setLayoutParams(layoutParams);*/
         }
     });
       dialog.show();
+      Display display = getWindowManager().getDefaultDisplay();
+      Point size = new Point();
+      display.getSize(size);
+      float dialogHeight =  size.y * 0.8f;
+      float dialogWidth = size.x * 0.8f;
+      ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
+      Drawable drawable = Drawable.createFromPath(path);
+      image.setImageDrawable(Drawable.createFromPath(path));
+      Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
+      //Получаем размеры изображения в пикселях
+
+      float imageWidthInPX = (float)bmp.getWidth();
+      float imageHeightInPx = (float) bmp.getHeight();
+      //Отношение размера изображения к  диалоговому окну
+      float heightCoeff = imageHeightInPx/dialogHeight;
+      float widthCoeff = imageWidthInPX/dialogWidth;
+      //
+      float compressCoeff = 1.0f;
+      if (heightCoeff > 1.0f || widthCoeff > 1.0f ){
+        compressCoeff = heightCoeff > widthCoeff ? heightCoeff : widthCoeff;
+      }
+      LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX/compressCoeff),
+             Math.round(imageHeightInPx/compressCoeff));
+      image.setLayoutParams(layoutParams);
   }
   };
 
