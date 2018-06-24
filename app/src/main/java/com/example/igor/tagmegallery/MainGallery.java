@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -102,30 +103,20 @@ public class MainGallery extends AppCompatActivity {
       dialog.setOnShowListener(new DialogInterface.OnShowListener(){
         @Override
         public void onShow(DialogInterface d) {
-          /*ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
-          Drawable drawable = Drawable.createFromPath(path);
-          image.setImageDrawable(Drawable.createFromPath(path));
-          Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
-          //Получаем размеры изображения в пикселях
-          float imageWidthInPX = (float)bmp.getWidth();
-          float imageHeightInPx = (float) bmp.getHeight();
-          LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
-                  Math.round(imageHeightInPx));
-          image.setLayoutParams(layoutParams);*/
+
         }
     });
       dialog.show();
       Display display = getWindowManager().getDefaultDisplay();
       Point size = new Point();
       display.getSize(size);
-      float dialogHeight =  size.y * 0.8f;
-      float dialogWidth = size.x * 0.8f;
+      float dialogHeight =  size.y * 0.9f;
+      float dialogWidth = size.x * 0.85f;
       ImageView image = (ImageView) dialog.findViewById(R.id.imgOriginal);
       Drawable drawable = Drawable.createFromPath(path);
-      image.setImageDrawable(Drawable.createFromPath(path));
+      //image.setImageDrawable(Drawable.createFromPath(path));
       Bitmap bmp = ((BitmapDrawable) drawable).getBitmap();
       //Получаем размеры изображения в пикселях
-
       float imageWidthInPX = (float)bmp.getWidth();
       float imageHeightInPx = (float) bmp.getHeight();
       //Отношение размера изображения к  диалоговому окну
@@ -133,12 +124,14 @@ public class MainGallery extends AppCompatActivity {
       float widthCoeff = imageWidthInPX/dialogWidth;
       //
       float compressCoeff = 1.0f;
+      int finalHeight, finalWidth;
       if (heightCoeff > 1.0f || widthCoeff > 1.0f ){
         compressCoeff = heightCoeff > widthCoeff ? heightCoeff : widthCoeff;
       }
-      LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX/compressCoeff),
-             Math.round(imageHeightInPx/compressCoeff));
-      image.setLayoutParams(layoutParams);
+      finalWidth = Math.round(imageWidthInPX/compressCoeff);
+      finalHeight = Math.round(imageHeightInPx/compressCoeff);
+      Bitmap resized = Bitmap.createScaledBitmap(bmp,(int)finalWidth, finalHeight, true);
+      image.setImageBitmap(resized);
   }
   };
 
