@@ -1,12 +1,9 @@
-import android.Manifest;
+package com.example.igor.tagmegallery;
+
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 
 import java.util.ArrayList;
 
@@ -26,20 +23,32 @@ public class ImageController {
     }
     @Override
     public boolean equals(Object other){
-      if( ((ImagePathId) other).path.equals(this.path) && ((ImagePathId) other).id.equals(this.id))
+      if (((ImagePathId) other).path.equals(this.path) && ((ImagePathId) other).id.equals(this.id))
         return true;
       return false;
     }
   }
 
-  private ArrayList<ImagePathId> images = new ArrayList<>();
-  private ArrayList<ImagePathId> thumbs = new ArrayList<>();
+  public class ImageArrayList extends ArrayList<ImagePathId>{
+    public int indexOf(int imageId){
+      //В данном случае id уникальны, поэтому можем искать по ним
+      for (int i = 0; i < size(); ++i){
+        if (get(i).id == imageId)
+          return i;
+      }
+      return -1;
+    }
+  }
+
+  private ImageArrayList images = new ImageArrayList();
+  private ImageArrayList thumbs = new ImageArrayList();
 
   public ImageController(Activity activity){
     //Внутри конструктора сразу получаем все необходимые для дальнейшей работы пути
     initializeImages(activity);
     initializeThumbs(activity);
   }
+
 
   private void initializeThumbs(Activity activity){ //Извлечение из памяти списка тамнейлов
     Uri uri;
@@ -81,11 +90,11 @@ public class ImageController {
       column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
       absolutePath = cursor.getString(column_index_data);
       id = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID);
-      images.add(0,new ImagePathId(absolutePath,Integer.parseInt(cursor.getString(id))));
+      images.add(new ImagePathId(absolutePath,Integer.parseInt(cursor.getString(id))));
       //Движимся, пока курсор курсор не дойдет до последней записи результата
       while (cursor.moveToNext()) {
         absolutePath = cursor.getString(column_index_data);
-        images.add(0,new ImagePathId(absolutePath,Integer.parseInt(cursor.getString(id))));
+        images.add(new ImagePathId(absolutePath,Integer.parseInt(cursor.getString(id))));
       }
       cursor.close();
     }
@@ -98,13 +107,21 @@ public class ImageController {
     //Вызывается из адаптера
     //Проверяет есть ли тамбнейл для изображения с индексом index
     //Возвращает null если нет, адаптер разберется с этим
-    String returnPath = null;
-    int originId = images.indexOf()
-
-
-    return returnPath;
+    int originId = images.get(index).id; //Ищем id оригинальной картинки по ее индексу в массиве
+    int thumbIndex = thumbs.indexOf(originId); //Ищем индекс тамбнейла с таким id
+    if ( thumbIndex >= 0)
+      return thumbs.get(thumbIndex).path; //Возвращаем пути до тамбнейла с таким id
+    return null;
   }
 
+  public String getImagePath(int index){
+    //Вызывается при нажатии на элемент галереи из кода MainGallery
+    return images.get(index).path; //Ищем путь оригинальной картинки по ее индексу в массиве, всегода существует раз мы смогли нажать по коррелированному тамбнейлу
+  }
 
+  public int size(){
+    //Возвращает кол-во исходных изображений
+    return images.size();
+  }
 
 }
